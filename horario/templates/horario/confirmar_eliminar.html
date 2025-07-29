@@ -1,0 +1,114 @@
+{% extends 'horario/base.html' %}
+
+{% block title %}Eliminar Clase - Organizador de Horario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .clase-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .clase-info h5 {
+        color: #dc3545;
+        margin-bottom: 15px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #6c757d;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-card">
+    <div class="text-center mb-4">
+        <i class="bi bi-exclamation-triangle warning-icon"></i>
+        <h1 class="h3 text-danger">Confirmar Eliminación</h1>
+        <p class="text-muted">¿Estás seguro de que quieres eliminar esta clase?</p>
+    </div>
+
+    <div class="clase-info">
+        <h5><i class="bi bi-info-circle"></i> Información de la Clase</h5>
+        <div class="info-item">
+            <span class="info-label">Curso:</span>
+            <span class="info-value">{{ clase.nombre_curso }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Docente:</span>
+            <span class="info-value">{{ clase.nombre_docente }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Grupo:</span>
+            <span class="info-value">{{ clase.grupo }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Turno:</span>
+            <span class="info-value">{{ clase.turno|title }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Horario:</span>
+            <span class="info-value">{{ clase.hora_inicio|time:"H:i" }} - {{ clase.hora_fin|time:"H:i" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Días:</span>
+            <span class="info-value">
+                {% for dia in clase.dias_semana %}
+                    <span class="badge bg-secondary me-1">{{ dia|title }}</span>
+                {% endfor %}
+            </span>
+        </div>
+    </div>
+
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Advertencia:</strong> Esta acción no se puede deshacer. La clase será eliminada permanentemente del horario.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="btn-group-actions">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Sí, Eliminar Clase
+            </button>
+            <a href="{% url 'horario:horario' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

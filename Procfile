@@ -1,0 +1,1 @@
+web: gunicorn horario_organizer.wsgi --log-file - 

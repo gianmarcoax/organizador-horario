@@ -1,0 +1,911 @@
+{% extends 'horario/base.html' %}
+{% load horario_extras %}
+
+{% block title %}Horario - Organizador de Horario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .horario-table {
+        background: white;
+        border-radius: 15px;
+        /* Removed overflow: hidden; to allow table-responsive to work */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .horario-table th {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        text-align: center;
+        padding: 15px 10px;
+        font-weight: 600;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .horario-table td {
+        padding: 4px 2px;
+        text-align: center;
+        border: 1px solid #e9ecef;
+        vertical-align: middle;
+        height: 80px;
+        position: relative;
+        min-width: 100px; /* Ancho mínimo reducido para cada columna */
+    }
+    
+    .horario-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .clase-item {
+        background: var(--clase-color, #4a90e2);
+        color: black;
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin: 1px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        height: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-width: 100%;
+    }
+    
+    .clase-item:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+    }
+    
+    /* Para múltiples clases en el mismo bloque */
+    .horario-table td:has(.clase-item + .clase-item) {
+        padding: 1px;
+    }
+    
+    .horario-table td:has(.clase-item + .clase-item) .clase-item {
+        margin: 1px;
+        height: 45px;
+    }
+    
+    .clase-item .curso-nombre {
+        font-weight: bold;
+        font-size: 0.75rem;
+        margin-bottom: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.0;
+    }
+    
+    .clase-item .docente {
+        font-size: 0.6rem;
+        opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 0.9;
+    }
+    
+    .empty-cell {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.8rem;
+    }
+    
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .filters-section {
+        margin-bottom: 20px;
+    }
+    
+    .filters-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: 100%;
+    }
+    
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .filter-item {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-item:hover {
+        background: #e9ecef;
+        border-color: var(--primary-color);
+    }
+    
+    .filter-item .form-check {
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .filter-item .form-check-input {
+        margin-right: 8px;
+    }
+    
+    .filter-item .form-check-label {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        margin: 0;
+    }
+    
+    .filter-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        margin-right: 8px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .global-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filters-panel h6 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .filters-panel .badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+    
+    .mi-horario-section {
+        margin-bottom: 20px;
+    }
+    
+    .mi-horario-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .cursos-seleccion {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .curso-seleccion-item {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .curso-seleccion-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .curso-seleccion-item.seleccionado {
+        border-color: var(--warning-color);
+        background: #fff3cd;
+    }
+    
+    .curso-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+    
+    .curso-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .curso-nombre {
+        font-weight: bold;
+        font-size: 1rem;
+        flex-grow: 1;
+    }
+    
+    .curso-status {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: #6c757d;
+        color: white;
+    }
+    
+    .curso-status.seleccionado {
+        background: var(--warning-color);
+    }
+    
+    .turno-opciones {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .turno-opciones .form-check {
+        margin: 0;
+    }
+    
+    .turno-opciones .form-check-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    
+    .mi-horario-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .cursos-contador {
+        font-weight: bold;
+        color: var(--warning-color);
+    }
+    
+    .table-responsive {
+        border-radius: 15px;
+        overflow-x: auto; /* Permite scroll horizontal */
+        overflow-y: hidden;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .horario-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    /* Para pantallas pequeñas */
+    @media (max-width: 768px) {
+        .horario-table td {
+            min-width: 100px;
+            padding: 6px 4px;
+        }
+        
+        .clase-item {
+            height: 50px;
+            padding: 4px 6px;
+            font-size: 0.7rem;
+        }
+        
+        .clase-item .curso-nombre {
+            font-size: 0.75rem;
+        }
+        
+        .clase-item .docente {
+            font-size: 0.6rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="bi bi-calendar-week"></i> Horario Semanal
+        </h1>
+        <p class="text-muted mb-0">Organiza tus clases de lunes a domingo</p>
+    </div>
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'horario:agregar_clase' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Agregar Clase
+            </a>
+        {% else %}
+            <a href="{% url 'horario:login' %}" class="btn btn-outline-primary">
+                <i class="bi bi-lock"></i> Inicia Sesión para Agregar
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stats-card text-center">
+            <div class="stats-number">{{ clases.count }}</div>
+            <div class="stats-label">Total de Clases</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center">
+            <div class="stats-number">{{ clases|length }}</div>
+            <div class="stats-label">Cursos Únicos</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center">
+            <div class="stats-number">{{ clases|length }}</div>
+            <div class="stats-label">Docentes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center">
+            <div class="stats-number">4</div>
+            <div class="stats-label">Grupos</div>
+        </div>
+    </div>
+</div>
+
+<!-- Mi Horario Personal -->
+<div class="mi-horario-section">
+    <div class="mi-horario-panel">
+        <h6 class="mb-3">
+            <i class="bi bi-person-check-fill text-warning"></i> 
+            <span class="badge bg-warning">Mi Horario</span>
+            Selecciona tus cursos (máximo 7)
+        </h6>
+        <div class="cursos-seleccion">
+            {% for curso in cursos_disponibles %}
+            <div class="curso-seleccion-item" data-curso="{{ curso.nombre }}">
+                <div class="curso-header">
+                    <span class="curso-color" style="background-color: {{ curso.color }};"></span>
+                    <span class="curso-nombre">{{ curso.nombre }}</span>
+                    <span class="curso-status" id="status-{{ curso.nombre|slugify }}">No seleccionado</span>
+                </div>
+                <div class="turno-opciones">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input turno-radio" type="radio" 
+                               name="turno-{{ curso.nombre|slugify }}" 
+                               id="mañana-{{ curso.nombre|slugify }}" 
+                               value="A"
+                               data-curso="{{ curso.nombre }}"
+                               data-turno="A">
+                        <label class="form-check-label" for="mañana-{{ curso.nombre|slugify }}">
+                            <i class="bi bi-sunrise text-primary"></i> Mañana (Grupo A)
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input turno-radio" type="radio" 
+                               name="turno-{{ curso.nombre|slugify }}" 
+                               id="tarde-{{ curso.nombre|slugify }}" 
+                               value="B"
+                               data-curso="{{ curso.nombre }}"
+                               data-turno="B">
+                        <label class="form-check-label" for="tarde-{{ curso.nombre|slugify }}">
+                            <i class="bi bi-sunset text-success"></i> Tarde (Grupo B)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mi-horario-actions mt-3">
+            <button type="button" class="btn btn-warning" onclick="aplicarMiHorario()">
+                <i class="bi bi-check-circle"></i> Aplicar Mi Horario
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccion()">
+                <i class="bi bi-x-circle"></i> Limpiar Selección
+            </button>
+            <span class="cursos-contador ms-3">
+                <span id="cursos-seleccionados">0</span> / 7 cursos seleccionados
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="debugClases()">
+                <i class="bi bi-bug"></i> Debug Clases
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="debugStatusIds()">
+                <i class="bi bi-bug"></i> Debug Status
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="mostrarTodasLasClases()">
+                <i class="bi bi-eye"></i> Mostrar Todas
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="probarSeleccionMañana()">
+                <i class="bi bi-play-circle"></i> Probar Mañana
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="probarSeleccionTarde()">
+                <i class="bi bi-play-circle"></i> Probar Tarde
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla del Horario -->
+<div class="table-responsive">
+    <table class="table table-bordered horario-table">
+        <thead>
+            <tr>
+                <th style="width: 100px;">Bloque de Tiempo</th>
+                {% for dia in dias %}
+                <th>{{ dia|title }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for hora in horas %}
+            <tr>
+                <td class="fw-bold text-center" style="background-color: #f8f9fa; font-size: 0.85rem; width: 100px;">
+                    {{ hora }}
+                </td>
+                {% for dia in dias %}
+                <td>
+                    {% if horario|get_item:dia|get_item:hora %}
+                        {% for clase_info in horario|get_item:dia|get_item:hora %}
+                        <div class="clase-item" 
+                             style="--clase-color: {{ clase_info.clase.color }};"
+                             data-bs-toggle="tooltip" 
+                             data-bs-placement="top"
+                             data-grupo="{{ clase_info.clase.grupo }}"
+                             title="{{ clase_info.clase.nombre_curso }} - {{ clase_info.clase.nombre_docente }} (Grupo {{ clase_info.clase.grupo }}) - {{ clase_info.hora_inicio }} - {{ clase_info.hora_fin }}">
+                            <div class="curso-nombre">{{ clase_info.clase.nombre_curso }}</div>
+                            <div class="docente">{{ clase_info.clase.nombre_docente }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-cell">-</div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Lista de Clases -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista de Todas las Clases</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for clase in clases %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">{{ clase.nombre_curso }}</h6>
+                            <span class="badge bg-primary">{{ clase.grupo }}</span>
+                        </div>
+                        <p class="card-text text-muted mb-2">
+                            <i class="bi bi-person"></i> {{ clase.nombre_docente }}
+                        </p>
+                        <p class="card-text mb-2">
+                            <i class="bi bi-clock"></i> {{ clase.hora_inicio|time:"H:i" }} - {{ clase.hora_fin|time:"H:i" }}
+                        </p>
+                        <p class="card-text mb-2">
+                            <i class="bi bi-calendar"></i> 
+                            {% for dia in clase.dias_semana %}
+                                <span class="badge bg-secondary me-1">{{ dia|title }}</span>
+                            {% endfor %}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge" style="background-color: {{ clase.color }}; color: black;">
+                                {{ clase.turno|title }}
+                            </span>
+                            <div>
+                                <a href="{% url 'horario:editar_clase' clase.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'horario:eliminar_clase' clase.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-4">
+                <i class="bi bi-calendar-x display-1 text-muted"></i>
+                <h5 class="mt-3">No hay clases registradas</h5>
+                <p class="text-muted">Comienza agregando tu primera clase</p>
+                <a href="{% url 'horario:agregar_clase' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Agregar Primera Clase
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Funcionalidad de Mi Horario
+    document.addEventListener('DOMContentLoaded', function() {
+        let miHorarioSeleccionado = {};
+        
+        // Obtener todos los radio buttons de turno
+        const turnoRadios = document.querySelectorAll('.turno-radio');
+        
+        // Agregar event listener a cada radio button
+        turnoRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const curso = this.getAttribute('data-curso');
+                const turno = this.getAttribute('data-turno');
+                
+                console.log(`Radio cambiado: ${curso} - ${turno}`);
+                
+                // Actualizar selección
+                miHorarioSeleccionado[curso] = turno;
+                
+                // Actualizar UI
+                actualizarUI(curso, turno);
+                actualizarContador();
+            });
+        });
+        
+        // Función para crear slug (similar a Django slugify)
+        function crearSlug(texto) {
+            return texto
+                .toLowerCase()
+                .replace(/[áäâà]/g, 'a')
+                .replace(/[éëêè]/g, 'e')
+                .replace(/[íïîì]/g, 'i')
+                .replace(/[óöôò]/g, 'o')
+                .replace(/[úüûù]/g, 'u')
+                .replace(/[ñ]/g, 'n')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim('-');
+        }
+        
+        // Función para actualizar la UI
+        function actualizarUI(curso, turno) {
+            console.log(`Actualizando UI para: ${curso} - ${turno}`);
+            
+            const cursoItem = document.querySelector(`[data-curso="${curso}"]`);
+            console.log('Curso item encontrado:', cursoItem);
+            
+            // Crear el ID del status usando el mismo método que Django
+            const statusId = `status-${crearSlug(curso)}`;
+            console.log('Buscando status con ID:', statusId);
+            
+            const statusElement = document.getElementById(statusId);
+            console.log('Status element encontrado:', statusElement);
+            
+            if (turno && statusElement) {
+                cursoItem.classList.add('seleccionado');
+                const nuevoTexto = turno === 'A' ? 'Mañana (Grupo A)' : 'Tarde (Grupo B)';
+                statusElement.textContent = nuevoTexto;
+                statusElement.classList.add('seleccionado');
+                console.log(`Status actualizado a: ${nuevoTexto}`);
+            } else if (statusElement) {
+                cursoItem.classList.remove('seleccionado');
+                statusElement.textContent = 'No seleccionado';
+                statusElement.classList.remove('seleccionado');
+                console.log('Status reseteado a: No seleccionado');
+            } else {
+                console.error('No se encontró el elemento status para:', curso);
+                console.error('ID buscado:', statusId);
+            }
+        }
+        
+        // Función para actualizar contador
+        function actualizarContador() {
+            const seleccionados = Object.keys(miHorarioSeleccionado).length;
+            const contadorElement = document.getElementById('cursos-seleccionados');
+            contadorElement.textContent = seleccionados;
+            
+            console.log('Contador actualizado:', seleccionados, 'cursos seleccionados');
+            console.log('Horario actual:', miHorarioSeleccionado);
+            
+            // Cambiar color si se excede el límite
+            if (seleccionados > 7) {
+                contadorElement.style.color = '#dc3545';
+            } else {
+                contadorElement.style.color = '';
+            }
+        }
+        
+        // Función para aplicar mi horario
+        window.aplicarMiHorario = function() {
+            const seleccionados = Object.keys(miHorarioSeleccionado).length;
+            
+            if (seleccionados > 7) {
+                console.log('❌ No puedes seleccionar más de 7 cursos. Deselecciona algunos cursos.');
+                return;
+            }
+            
+            if (seleccionados === 0) {
+                console.log('❌ No has seleccionado ningún curso. Selecciona al menos un curso.');
+                return;
+            }
+            
+            console.log('=== APLICANDO MI HORARIO ===');
+            console.log('Horario seleccionado:', miHorarioSeleccionado);
+            
+            // Ocultar todas las clases primero
+            const todasLasClases = document.querySelectorAll('.clase-item');
+            console.log(`Total de clases encontradas: ${todasLasClases.length}`);
+            todasLasClases.forEach(clase => {
+                clase.style.display = 'none';
+                clase.style.opacity = '0';
+            });
+            
+            let clasesMostradas = 0;
+            
+            // Mostrar solo las clases seleccionadas
+            Object.entries(miHorarioSeleccionado).forEach(([curso, turno]) => {
+                console.log(`\n--- Buscando curso: "${curso}" con turno: "${turno}" ---`);
+                
+                const clasesDelCurso = document.querySelectorAll('.clase-item');
+                clasesDelCurso.forEach((clase, index) => {
+                    const cursoNombre = clase.querySelector('.curso-nombre').textContent.trim();
+                    const grupoClase = clase.getAttribute('data-grupo');
+                    
+                    console.log(`Clase ${index + 1}: "${cursoNombre}"`);
+                    console.log(`Grupo: "${grupoClase}"`);
+                    
+                    // Verificar si el curso coincide (usando includes para ser más flexible)
+                    const cursoCoincide = cursoNombre.includes(curso) || curso.includes(cursoNombre);
+                    
+                    // Verificar si el grupo coincide
+                    const grupoCoincide = grupoClase === turno;
+                    
+                    console.log(`¿Curso coincide? ${cursoCoincide} | ¿Grupo coincide? ${grupoCoincide}`);
+                    
+                    if (cursoCoincide && grupoCoincide) {
+                        clase.style.display = 'flex';
+                        clase.style.opacity = '1';
+                        clasesMostradas++;
+                        console.log(`✅ ¡Mostrando clase: ${cursoNombre} - Grupo ${turno}`);
+                    } else {
+                        console.log(`❌ No coincide: ${cursoNombre} vs ${curso} o Grupo ${turno}`);
+                    }
+                });
+            });
+            
+            console.log(`\n=== RESULTADO ===`);
+            console.log(`Clases mostradas: ${clasesMostradas}`);
+            console.log(`Cursos seleccionados: ${seleccionados}`);
+            
+            // Actualizar estadísticas
+            updateClaseCount();
+            
+            // Mensaje de éxito en consola (sin alert)
+            console.log(`✅ Horario aplicado exitosamente - Cursos: ${seleccionados}, Clases: ${clasesMostradas}`);
+        }
+        
+        // Función para limpiar selección
+        window.limpiarSeleccion = function() {
+            // Desmarcar todos los radio buttons
+            turnoRadios.forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Limpiar selección
+            miHorarioSeleccionado = {};
+            
+            // Actualizar UI
+            document.querySelectorAll('.curso-seleccion-item').forEach(item => {
+                const curso = item.getAttribute('data-curso');
+                actualizarUI(curso, null);
+            });
+            
+            actualizarContador();
+            
+            // Mostrar todas las clases
+            const todasLasClases = document.querySelectorAll('.clase-item');
+            todasLasClases.forEach(clase => {
+                clase.style.display = 'flex';
+                clase.style.opacity = '1';
+            });
+            
+            updateClaseCount();
+        }
+        
+        // Función para actualizar contador de clases
+        function updateClaseCount() {
+            const visibleClases = document.querySelectorAll('.clase-item[style*="display: flex"]').length;
+            const totalClases = document.querySelectorAll('.clase-item').length;
+            
+            // Actualizar estadísticas si existe el elemento
+            const statsElement = document.querySelector('.stats-number');
+            if (statsElement) {
+                statsElement.textContent = visibleClases;
+            }
+        }
+        
+        // Función de debug para ver todas las clases disponibles
+        window.debugClases = function() {
+            console.log('=== DEBUG: TODAS LAS CLASES DISPONIBLES ===');
+            const todasLasClases = document.querySelectorAll('.clase-item');
+            todasLasClases.forEach((clase, index) => {
+                const cursoNombre = clase.querySelector('.curso-nombre').textContent.trim();
+                const tooltipText = clase.getAttribute('title');
+                console.log(`${index + 1}. Curso: "${cursoNombre}" | Tooltip: "${tooltipText}"`);
+            });
+            console.log('=== FIN DEBUG ===');
+        }
+        
+        // Función para mostrar todas las clases (para testing)
+        window.mostrarTodasLasClases = function() {
+            console.log('Mostrando todas las clases...');
+            const todasLasClases = document.querySelectorAll('.clase-item');
+            todasLasClases.forEach(clase => {
+                clase.style.display = 'flex';
+                clase.style.opacity = '1';
+            });
+            updateClaseCount();
+            console.log('✅ Todas las clases mostradas');
+        }
+        
+        // Función de prueba: seleccionar todos los cursos en mañana
+        window.probarSeleccionMañana = function() {
+            console.log('=== PRUEBA: SELECCIONANDO TODOS LOS CURSOS EN MAÑANA ===');
+            
+            // Limpiar selección anterior
+            miHorarioSeleccionado = {};
+            
+            // Desmarcar todos los radio buttons
+            const turnoRadios = document.querySelectorAll('.turno-radio');
+            turnoRadios.forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Seleccionar todos los cursos en turno de mañana (Grupo A)
+            const radioMañana = document.querySelectorAll('input[value="A"]');
+            console.log(`Encontrados ${radioMañana.length} radio buttons de mañana`);
+            
+            radioMañana.forEach((radio, index) => {
+                const curso = radio.getAttribute('data-curso');
+                const turno = radio.getAttribute('data-turno');
+                
+                console.log(`${index + 1}. Seleccionando: ${curso} - ${turno}`);
+                
+                // Marcar el radio button
+                radio.checked = true;
+                
+                // Actualizar selección
+                miHorarioSeleccionado[curso] = turno;
+                
+                // Actualizar UI
+                actualizarUI(curso, turno);
+            });
+            
+            // Actualizar contador
+            actualizarContador();
+            
+            console.log('Horario seleccionado:', miHorarioSeleccionado);
+            console.log('Total de cursos seleccionados:', Object.keys(miHorarioSeleccionado).length);
+            
+            // Aplicar horario automáticamente
+            setTimeout(() => {
+                console.log('Aplicando horario automáticamente...');
+                aplicarMiHorario();
+            }, 1000);
+        }
+        
+        // Función de prueba: seleccionar todos los cursos en tarde
+        window.probarSeleccionTarde = function() {
+            console.log('=== PRUEBA: SELECCIONANDO TODOS LOS CURSOS EN TARDE ===');
+            
+            // Limpiar selección anterior
+            miHorarioSeleccionado = {};
+            
+            // Desmarcar todos los radio buttons
+            const turnoRadios = document.querySelectorAll('.turno-radio');
+            turnoRadios.forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Seleccionar todos los cursos en turno de tarde (Grupo B)
+            const radioTarde = document.querySelectorAll('input[value="B"]');
+            console.log(`Encontrados ${radioTarde.length} radio buttons de tarde`);
+            
+            radioTarde.forEach((radio, index) => {
+                const curso = radio.getAttribute('data-curso');
+                const turno = radio.getAttribute('data-turno');
+                
+                console.log(`${index + 1}. Seleccionando: ${curso} - ${turno}`);
+                
+                // Marcar el radio button
+                radio.checked = true;
+                
+                // Actualizar selección
+                miHorarioSeleccionado[curso] = turno;
+                
+                // Actualizar UI
+                actualizarUI(curso, turno);
+            });
+            
+            // Actualizar contador
+            actualizarContador();
+            
+            console.log('Horario seleccionado:', miHorarioSeleccionado);
+            console.log('Total de cursos seleccionados:', Object.keys(miHorarioSeleccionado).length);
+            
+            // Aplicar horario automáticamente
+            setTimeout(() => {
+                console.log('Aplicando horario automáticamente...');
+                aplicarMiHorario();
+            }, 1000);
+        }
+        
+        // Función de debug para ver los IDs de status
+        window.debugStatusIds = function() {
+            console.log('=== DEBUG: IDs DE STATUS ===');
+            const cursoItems = document.querySelectorAll('.curso-seleccion-item');
+            cursoItems.forEach((item, index) => {
+                const curso = item.getAttribute('data-curso');
+                const statusId = `status-${crearSlug(curso)}`;
+                const statusElement = document.getElementById(statusId);
+                console.log(`${index + 1}. Curso: "${curso}" | ID: "${statusId}" | Encontrado: ${!!statusElement}`);
+            });
+            console.log('=== FIN DEBUG STATUS ===');
+        }
+        
+        // Inicializar contador
+        actualizarContador();
+        
+        // Ejecutar debug al cargar
+        setTimeout(() => {
+            debugClases();
+        }, 1000);
+    });
+</script>
+{% endblock %} 

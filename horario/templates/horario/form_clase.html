@@ -1,0 +1,344 @@
+{% extends 'horario/base.html' %}
+
+{% block title %}{{ titulo }} - Organizador de Horario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-section h5 {
+        color: var(--primary-color);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    }
+    
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .form-check {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+    
+    .form-check:hover {
+        background: #e9ecef;
+        border-color: var(--primary-color);
+    }
+    
+    .form-check-input:checked + .form-check-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .time-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .preview-card {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .preview-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .preview-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .preview-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+    }
+    
+    .preview-label {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+    
+    .preview-value {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-plus-circle"></i> {{ titulo }}
+            </h1>
+            <p class="text-muted mb-0">Completa la información de la clase</p>
+        </div>
+        <a href="{% url 'horario:horario' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Horario
+        </a>
+    </div>
+
+    <form method="post" id="claseForm">
+        {% csrf_token %}
+        
+        <!-- Información Básica -->
+        <div class="form-section">
+            <h5><i class="bi bi-info-circle"></i> Información Básica</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.nombre_curso.id_for_label }}" class="form-label">
+                        {{ form.nombre_curso.label }}
+                    </label>
+                    {{ form.nombre_curso }}
+                    {% if form.nombre_curso.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.nombre_curso.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.nombre_docente.id_for_label }}" class="form-label">
+                        {{ form.nombre_docente.label }}
+                    </label>
+                    {{ form.nombre_docente }}
+                    {% if form.nombre_docente.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.nombre_docente.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.grupo.id_for_label }}" class="form-label">
+                        {{ form.grupo.label }}
+                    </label>
+                    {{ form.grupo }}
+                    {% if form.grupo.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.grupo.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.turno.id_for_label }}" class="form-label">
+                        {{ form.turno.label }}
+                    </label>
+                    {{ form.turno }}
+                    {% if form.turno.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.turno.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Horario -->
+        <div class="form-section">
+            <h5><i class="bi bi-clock"></i> Horario</h5>
+            <div class="time-inputs">
+                <div class="mb-3">
+                    <label for="{{ form.hora_inicio.id_for_label }}" class="form-label">
+                        {{ form.hora_inicio.label }}
+                    </label>
+                    {{ form.hora_inicio }}
+                    {% if form.hora_inicio.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.hora_inicio.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.hora_fin.id_for_label }}" class="form-label">
+                        {{ form.hora_fin.label }}
+                    </label>
+                    {{ form.hora_fin }}
+                    {% if form.hora_fin.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.hora_fin.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Días de la Semana -->
+        <div class="form-section">
+            <h5><i class="bi bi-calendar-week"></i> Días de la Semana</h5>
+            <p class="text-muted mb-3">Selecciona los días en que se imparte esta clase:</p>
+            <div class="checkbox-group">
+                {% for choice in form.dias_semana %}
+                <div class="form-check">
+                    {{ choice.tag }}
+                    <label class="form-check-label" for="{{ choice.id_for_label }}">
+                        {{ choice.choice_label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% if form.dias_semana.errors %}
+                <div class="text-danger mt-2">
+                    {% for error in form.dias_semana.errors %}
+                        <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Vista Previa -->
+        <div class="preview-card" id="previewCard" style="display: none;">
+            <div class="preview-title">
+                <i class="bi bi-eye"></i> Vista Previa de la Clase
+            </div>
+            <div class="preview-info">
+                <div class="preview-item">
+                    <div class="preview-label">Curso</div>
+                    <div class="preview-value" id="previewCurso">-</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Docente</div>
+                    <div class="preview-value" id="previewDocente">-</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Grupo</div>
+                    <div class="preview-value" id="previewGrupo">-</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Turno</div>
+                    <div class="preview-value" id="previewTurno">-</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Horario</div>
+                    <div class="preview-value" id="previewHorario">-</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Días</div>
+                    <div class="preview-value" id="previewDias">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="btn-group-actions">
+            <button type="button" class="btn btn-outline-info" onclick="mostrarVistaPrevia()">
+                <i class="bi bi-eye"></i> Vista Previa
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> 
+                {% if clase %}Actualizar{% else %}Crear{% endif %} Clase
+            </button>
+            <a href="{% url 'horario:horario' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function mostrarVistaPrevia() {
+        const curso = document.getElementById('{{ form.nombre_curso.id_for_label }}').value || '-';
+        const docente = document.getElementById('{{ form.nombre_docente.id_for_label }}').value || '-';
+        const grupo = document.getElementById('{{ form.grupo.id_for_label }}').value || '-';
+        const turno = document.getElementById('{{ form.turno.id_for_label }}').value || '-';
+        const horaInicio = document.getElementById('{{ form.hora_inicio.id_for_label }}').value || '-';
+        const horaFin = document.getElementById('{{ form.hora_fin.id_for_label }}').value || '-';
+        
+        // Obtener días seleccionados
+        const diasSeleccionados = [];
+        document.querySelectorAll('input[name="{{ form.dias_semana.name }}"]:checked').forEach(checkbox => {
+            diasSeleccionados.push(checkbox.nextElementSibling.textContent.trim());
+        });
+        const dias = diasSeleccionados.length > 0 ? diasSeleccionados.join(', ') : '-';
+        
+        // Actualizar vista previa
+        document.getElementById('previewCurso').textContent = curso;
+        document.getElementById('previewDocente').textContent = docente;
+        document.getElementById('previewGrupo').textContent = grupo;
+        document.getElementById('previewTurno').textContent = turno;
+        document.getElementById('previewHorario').textContent = `${horaInicio} - ${horaFin}`;
+        document.getElementById('previewDias').textContent = dias;
+        
+        // Mostrar la tarjeta de vista previa
+        document.getElementById('previewCard').style.display = 'block';
+        
+        // Hacer scroll a la vista previa
+        document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Validación en tiempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('claseForm');
+        const inputs = form.querySelectorAll('input, select');
+        
+        inputs.forEach(input => {
+            input.addEventListener('change', function() {
+                // Ocultar vista previa si hay cambios
+                document.getElementById('previewCard').style.display = 'none';
+            });
+        });
+    });
+</script>
+{% endblock %} 
